@@ -33,6 +33,20 @@
             }.bind(this)
           });
         },
+        handleCommentSubmit: function(comment) {
+          $.ajax({
+            url: this.props.url,
+            dataType: 'json',
+            type: 'Post',
+            data: comment,
+            success: function(data) {
+              this.setState({data:data});
+            }.bind(this),
+            error: function(xhr, status, err) {
+              console.error(this.props.url, status, err.toString());
+            }.bind(this)
+          });
+        },
         // componentDidMount is a method called automatically by React after a
         // component is rendered for the first time.
         componentDidMount : function() {
@@ -44,25 +58,11 @@
             <div className="commentBox">
               <h1>Comment Box</h1>
               <CommentList data={this.state.data} />
-              <CommentForm />
+              <CommentForm onCommentSubmit={this.handleCommentSubmit}/>
             </div>
           );
         }
       });
-
-      //JSX syntax
-      /*
-      var CommentBoxJSX  = React.createClass({displayName: 'CommentBoxJSX',
-        render : function () {
-          return(
-            React.createElement('div', {className: "CommentBoxJSX"},"CommentBox div with JSX syntax")
-          );
-        }
-      });
-      ReactDOM.render(
-        React.createElement(CommentBoxJSX, null),
-        document.getElementById('content')
-      );*/
 
       var CommentList = React.createClass({
         render : function() {
@@ -82,9 +82,39 @@
       });
 
       var CommentForm = React.createClass({
-        render : function(){
+        getInitialState: function() {
+          return {author: '', text:''};
+        },
+        handleAuthorChange : function(e) {
+          this.setState({author:e.target.value});
+        },
+        handleTextChange : function(e) {
+          this.setState({text:e.target.value});
+        },
+        handleSubmit: function(e) {
+          // Call preventDefault() on the event to prevent
+          // the browser's default action of submitting the form.
+          e.preventDefault();
+          var author = this.state.author.trim();
+          var text = this.state.text.trim();
+          if(!author || !text) {
+            return;
+          }
+          this.props.onCommentSubmit({author: author, text: text});
+          this.setState({author:'', text: ''});
+        },
+        render : function() {
           return (
-            <div className="commentForm">CommentForm</div>
+            <form className="commentForm" onSubmit={this.handleSubmit}>
+              <input
+                type="text" placeholder="Your name"
+                value={this.state.author} onChange={this.handleAuthorChange}
+              />
+              <input type="text" placeholder="Say something..."
+                value={this.state.text} onChange={this.handleTextChange}
+              />
+              <input type="submit" value="Post"/>
+            </form>
           );
         }
       });
@@ -105,7 +135,7 @@
           );
         }
       });
-
+      // Change comments.json and the front page will be automatically update after two seconds
       ReactDOM.render(<CommentBox url="/api/comments" pollInterval={2000}/>, document.getElementById('content'));
     </script>
   </body>
