@@ -14,17 +14,36 @@
   <body>
     <div id="content"></div>
     <script type="text/babel">
-    var dataComment = [
-      {id: 1, author: "Pete Hunt", text: "This is one comment"},
-      {id: 2, author: "Jordan Walke", text: "This is *another* comment"}
-    ];
-
       var CommentBox = React.createClass({
+        // getInitialState() executes exactly once during the lifecycle of
+        // the component and sets up the initial state of the component.
+        getInitialState: function() {
+          return {data: []};
+        },
+        loadCommentsFromServer: function() {
+          $.ajax({
+            url: this.props.url,
+            dataType: 'json',
+            cache: false,
+            success: function(data) {
+              this.setState({data:data});
+            }.bind(this),
+            error: function (xhr, status, err) {
+              console.error(this.props.url, status, err.toString());
+            }.bind(this)
+          });
+        },
+        // componentDidMount is a method called automatically by React after a
+        // component is rendered for the first time.
+        componentDidMount : function() {
+          this.loadCommentsFromServer();
+          setInterval(this.loadCommentsFromServer, this.props.pollInterval);
+        },
         render: function() {
           return (
             <div className="commentBox">
-              <h1>CommentBox div with xml syntax</h1>
-              <CommentList data={this.props.data} />
+              <h1>Comment Box</h1>
+              <CommentList data={this.state.data} />
               <CommentForm />
             </div>
           );
@@ -86,7 +105,8 @@
           );
         }
       });
-      ReactDOM.render(<CommentBox data={dataComment}/>, document.getElementById('content'));
+
+      ReactDOM.render(<CommentBox url="/api/comments" pollInterval={2000}/>, document.getElementById('content'));
     </script>
   </body>
 </html>
